@@ -1,24 +1,21 @@
 const employees = document.getElementById('gallery');
 const body = document.querySelector('body');
 let results, names;
-let r = [];
 
-fetch('https://randomuser.me/api/?results=12')
+
+fetch('https://randomuser.me/api/?results=12&nat=us')
  	.then(res => res.json())
  	.then(data => {
  		results = data.results;
- 		results.forEach((n, i) => {
- 			r[i] = n;
- 		});
 		names = results.map(result => result.name.first);
-		console.log(results);
-		displaySearch();
+		addSearch();
  		displayUsers(results);
  		
  	});
 
 
 function displayUsers(data) {
+	employees.innerHTML = '';
 	const users = data.map(user => `
 		<div class='card'>
 			<div class='card-img-container'>
@@ -26,7 +23,7 @@ function displayUsers(data) {
 				src='${user.picture.thumbnail}'
 				alt='profile picture'>
 			</div>
-			<div class='card-info=container'>
+			<div class='card-info-container'>
 				<h3 id='${user.name.first}' class='card-name cap'>${user.name.first} ${user.name.last}</h3>
 				<p class='card-text'>${user.email}</p>
 				<p class='card-text cap'>${user.location.city}, ${user.location.state}</p>
@@ -67,8 +64,8 @@ function createModal() {
 	console.log(body.querySelector('.modal-container'));
 }
 
-function displaySearch() {
-	const search = `
+function addSearch() {
+	const searchBar = `
 		<form action='#' method='get'>
 			<input type='search' id='search-input'
 			class='search-input' placeholder='Search...'>
@@ -76,7 +73,32 @@ function displaySearch() {
 			id='search-submit' class='search-submit'>
 		</form>
 	`;
-	body.querySelector('.search-container').insertAdjacentHTML('beforeend', search);
+
+	const bar = body.querySelector('.search-container');
+	bar.insertAdjacentHTML('beforeend', searchBar);
+
+	function search() {
+		const input = body.querySelector('input').value;
+		let emp = [];
+		for(let i=0; i<names.length; i++) {
+			let e = `${results[i].name.first} ${results[i].name.last}`;
+			if(e.toLowerCase().includes(input.toLowerCase())) {
+				emp.push(results[i]);
+			}
+		}
+		if(emp.length === 0) {
+			employees.innerHTML = 'No results found';
+		} else {
+			displayUsers(emp);
+		}
+	}
+
+	bar.addEventListener('click', e => {
+		if(e.target.id === 'search-submit') {
+			search();
+		}
+	});
+	bar.addEventListener('keyup', search);
 }
 
 function displayModal(user, index) {
@@ -125,11 +147,10 @@ function displayModal(user, index) {
 	
 	console.log(body.querySelector('.modal-container'));
 
-	console.log(r);
 	console.log(index);
 	if(index === 0) { 
 		body.querySelector('#modal-prev').disabled = true;
-	} else if (index === results.length--) {
+	} else if (index === results.length-1) {
 		body.querySelector('#modal-next').disabled = true;
 	}
 	// checkIndex(names.indexOf(user.name.first));
@@ -145,7 +166,7 @@ function checkIndex(index) {
 
 function toggleUser(direction, user) {
 	// employees.nextElementSibling.remove();
-	console.log(employees.nextElementSibling);
+	// console.log(employees.nextElementSibling);
 
 	let index = names.indexOf(user);
 	if(direction === 'Prev') {
@@ -154,13 +175,15 @@ function toggleUser(direction, user) {
 		index++;
 	}
 
-	const u = r[index];
+	const u = results[index];
 	if(index >= 0 && index < results.length) {
 		displayModal(u, index);
 		// checkIndex(index);
 	}
 }
 
+// createModal();
+// body.querySelector('.modal-container').style.visibility = 'hidden';
 
 body.addEventListener('click', event => {
 	let e = event.target;
@@ -172,22 +195,23 @@ body.addEventListener('click', event => {
 	// 	modal = body.querySelector('.modal-container');
 	// 	body.querySelector('.modal-container').style.visibility = 'hidden';
 	// }
-	// console.log(modal);
-	// console.log(employees);
+	console.log(e);
+	console.log(employees);
 
 	if(modal) {
 		if(body.querySelector('.modal-close-btn').contains(e)) { modal.remove(); }
 		else if(e.parentNode.className === 'modal-btn-container') {
 			modal.remove();
+			console.log(modal);
 			toggleUser(e.textContent, e.parentNode.parentNode.querySelector('h3').id);
 		}
-	} else if((e.parentNode !== body) || employees.contains(e)) {
+	} else if(e !== employees && employees.contains(e)) {
 		// console.log(e.parentNode);
 		while(e.className !== 'card') {
 			e = e.parentNode;
 		}
 		const index = names.indexOf(e.querySelector('h3').id);
 		// console.log('hey');
-		displayModal(r[index], index);
+		displayModal(results[index], index);
 	}
 });
