@@ -1,8 +1,10 @@
+//variables to be used later
 const employees = document.getElementById('gallery');
 const body = document.querySelector('body');
-let results, names;
+let results, names, list;
 
-
+//fetching data on 12 users from the us, defining variables, 
+//and displaying search bar and users
 fetch('https://randomuser.me/api/?results=12&nat=us')
  	.then(res => res.json())
  	.then(data => {
@@ -10,12 +12,11 @@ fetch('https://randomuser.me/api/?results=12&nat=us')
 		names = results.map(result => result.name.first);
 		addSearch();
  		displayUsers(results);
- 		
  	});
-
-
+//displays users based on template
 function displayUsers(data) {
-	employees.innerHTML = '';
+	list = data;
+	names = data.map(user => user.name.first);
 	const users = data.map(user => `
 		<div class='card'>
 			<div class='card-img-container'>
@@ -34,73 +35,7 @@ function displayUsers(data) {
 	users.forEach(user => employees.insertAdjacentHTML('beforeend', user));
 }
 
-function createModal() {
-	const modal = `
-		<div class='modal-container'>
-			<div class='modal'>
-				<button type='button' id='modal-close-btn'
-				class='modal-close-btn'><strong>X</strong></button>
-				<div class='modal-info-container'>
-					<img class='modal-img'
-					src=''
-					alt='profile picture'>
-					<h3 id='' class='modal-name cap'></h3>
-					<p class='modal-text'></p>
-					<p class='modal-text cap'></p>
-					<hr>
-					<p class='modal-text'></p>
-					<p class='modal-text'>,
-					, </p>
-					<p class='modal-text'>Birthday: </p>
-				</div>
-			</div>
-			<div class='modal-btn-container'>
-				<button type='button' id='modal-prev' class='modal-prev btn'>Prev</button>
-				<button type='button' id='modal-next' class='modal-next btn'>Next</button>
-			</div>
-		</div>
-	`;
-	employees.insertAdjacentHTML('afterend', modal);
-	console.log(body.querySelector('.modal-container'));
-}
-
-function addSearch() {
-	const searchBar = `
-		<form action='#' method='get'>
-			<input type='search' id='search-input'
-			class='search-input' placeholder='Search...'>
-			<input type='submit' value='&#x1F50D;'
-			id='search-submit' class='search-submit'>
-		</form>
-	`;
-
-	const bar = body.querySelector('.search-container');
-	bar.insertAdjacentHTML('beforeend', searchBar);
-
-	function search() {
-		const input = body.querySelector('input').value;
-		let emp = [];
-		for(let i=0; i<names.length; i++) {
-			let e = `${results[i].name.first} ${results[i].name.last}`;
-			if(e.toLowerCase().includes(input.toLowerCase())) {
-				emp.push(results[i]);
-			}
-		}
-		if(emp.length === 0) {
-			employees.innerHTML = 'No results found';
-		} else {
-			displayUsers(emp);
-		}
-	}
-
-	bar.addEventListener('click', e => {
-		if(e.target.id === 'search-submit') {
-			search();
-		}
-	});
-	bar.addEventListener('keyup', search);
-}
-
+//displays modal window
 function displayModal(user, index) {
 	const u = user;
 	const location = u.location;
@@ -137,81 +72,110 @@ function displayModal(user, index) {
 	`;
 	employees.insertAdjacentHTML('afterend', modal);
 
-	// body.querySelector('.modal-container').style.visibility = 'visible';
-	// body.querySelector('img.modal-img').src = u.picture.thumbnail;
-	// // console.log(body.querySelector('.modal-name'));
-	// body.querySelector('h3.modal-name').id = u.name.first;
-	// body.querySelector('p.modal-text').textContent = u.email;
-	// body.querySelector('p.modal-text').nextElementSibling.textContent = location.city;
-	// body.querySelector('hr').nextElementSibling.textContent = cell;
-	
-	console.log(body.querySelector('.modal-container'));
+	//checking index of user to determine whether prev or next button needs to be disabled
+	checkIndex(names.indexOf(user.name.first));
+}
 
-	console.log(index);
+//adds search bar and functionality to DOM
+function addSearch() {
+	const searchBar = `
+		<form action='#' method='get'>
+			<input type='search' id='search-input'
+			class='search-input' placeholder='Search...'>
+			<input type='submit' value='&#x1F50D;'
+			id='search-submit' class='search-submit'>
+		</form>
+	`;
+
+	const bar = body.querySelector('.search-container');
+	bar.insertAdjacentHTML('beforeend', searchBar);
+
+	//creates list of employees who's names match what's in the search bar
+	//and displays them, or an error msg if none match
+	function search() {
+		const input = body.querySelector('input').value;
+		if(input) {
+			let emp = [];
+			for(let i=0; i<names.length; i++) {
+				let e = `${list[i].name.first} ${list[i].name.last}`;
+				if(e.toLowerCase().includes(input.toLowerCase())) {
+					emp.push(list[i]);
+				}
+			}
+			if(emp.length === 0) {
+				employees.innerHTML = 'No results found';
+				list = results;
+				names = results.map(result => result.name.first);
+			} else {
+				employees.innerHTML = '';
+				list = emp;
+				displayUsers(emp);
+			}
+		} else {
+			employees.innerHTML = '';
+			displayUsers(list);
+		}
+		console.log(list, names);
+	}
+
+	//event listeners run search function for every keyup or click on the submit button
+	bar.addEventListener('click', e => {
+		if(e.target.id === 'search-submit') {
+			search();
+		}
+	});
+	bar.addEventListener('keydown', e => {
+		if(e.key !== 'Backspace') {
+			search();
+		} else if(!body.querySelector('input').value) {
+			displayUsers(list);
+		}
+	});
+}
+
+//toggles to other users' modal windows
+function toggleUser(direction, user) {
+	names = list.map(l => l.name.first);
+	let index = names.indexOf(user);
+	direction === 'Prev' ? index-- : index++;
+
+	const u = list[index];
+	if(index >= 0 && index < list.length) {
+		displayModal(u, index);
+		checkIndex(index);
+	}
+}
+
+//helper function that determines whether current user at beginning
+// or end of list and disables appropriate button
+function checkIndex(index) {
 	if(index === 0) { 
 		body.querySelector('#modal-prev').disabled = true;
 	} else if (index === results.length-1) {
 		body.querySelector('#modal-next').disabled = true;
 	}
-	// checkIndex(names.indexOf(user.name.first));
 }
 
-function checkIndex(index) {
-	if(index === 0) { 
-		body.querySelector('#modal-prev').disabled = true;
-	} else if (index === results.length--) {
-		body.querySelector('#modal-next').disabled = true;
-	}
-}
-
-function toggleUser(direction, user) {
-	// employees.nextElementSibling.remove();
-	// console.log(employees.nextElementSibling);
-
-	let index = names.indexOf(user);
-	if(direction === 'Prev') {
-		index--;
-	} else {
-		index++;
-	}
-
-	const u = results[index];
-	if(index >= 0 && index < results.length) {
-		displayModal(u, index);
-		// checkIndex(index);
-	}
-}
-
-// createModal();
-// body.querySelector('.modal-container').style.visibility = 'hidden';
-
+//event listener that listens for clicks within body
 body.addEventListener('click', event => {
 	let e = event.target;
 	let modal = body.querySelector('.modal-container');
-	
-	// if(modal === null) { 
-	// 	createModal();
-	// 	console.log(body.querySelector('.modal-container'));
-	// 	modal = body.querySelector('.modal-container');
-	// 	body.querySelector('.modal-container').style.visibility = 'hidden';
-	// }
-	console.log(e);
-	console.log(employees);
 
+	//if the modal container exists on the DOM,
+	//it'll either remove the modal window or toggle the user
 	if(modal) {
-		if(body.querySelector('.modal-close-btn').contains(e)) { modal.remove(); }
+		if(body.querySelector('.modal-close-btn').contains(e)) { modal.remove() }
 		else if(e.parentNode.className === 'modal-btn-container') {
 			modal.remove();
-			console.log(modal);
 			toggleUser(e.textContent, e.parentNode.parentNode.querySelector('h3').id);
 		}
+	//else if the target clicked was within one of the employee cards,
+	//it'll display a modal window w said employee's info
 	} else if(e !== employees && employees.contains(e)) {
-		// console.log(e.parentNode);
 		while(e.className !== 'card') {
 			e = e.parentNode;
 		}
 		const index = names.indexOf(e.querySelector('h3').id);
-		// console.log('hey');
-		displayModal(results[index], index);
+		displayModal(list[index], index);
 	}
 });
