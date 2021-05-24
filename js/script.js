@@ -137,7 +137,7 @@ function toggleUser(direction, user) {
 }
 
 //helper function that determines whether current user at beginning
-// or end of list and disables appropriate button
+//or end of list and disables appropriate button
 function checkIndex(index) {
 	if(index === 0) { 
 		body.querySelector('#modal-prev').disabled = true;
