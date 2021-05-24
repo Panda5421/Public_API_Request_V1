@@ -54,7 +54,7 @@ function displayModal(user, index) {
 					<img class='modal-img'
 					src='${u.picture.thumbnail}'
 					alt='profile picture'>
-					<h3 id='${u.name.first}' class='modal-name cap'>${u.name.first}</h3>
+					<h3 id='${u.name.first}' class='modal-name cap'>${u.name.first} ${u.name.last}</h3>
 					<p class='modal-text'>${u.email}</p>
 					<p class='modal-text cap'>${location.city}</p>
 					<hr>
@@ -94,18 +94,17 @@ function addSearch() {
 	//and displays them, or an error msg if none match
 	function search() {
 		const input = body.querySelector('input').value;
-		if(input) {
+		if(input !== '') {
 			let emp = [];
-			for(let i=0; i<names.length; i++) {
-				let e = `${list[i].name.first} ${list[i].name.last}`;
+			for(let i=0; i<results.length; i++) {
+				let e = `${results[i].name.first} ${results[i].name.last}`;
 				if(e.toLowerCase().includes(input.toLowerCase())) {
-					emp.push(list[i]);
+					emp.push(results[i]);
 				}
 			}
 			if(emp.length === 0) {
 				employees.innerHTML = 'No results found';
 				list = results;
-				names = results.map(result => result.name.first);
 			} else {
 				employees.innerHTML = '';
 				list = emp;
@@ -113,24 +112,15 @@ function addSearch() {
 			}
 		} else {
 			employees.innerHTML = '';
-			displayUsers(list);
+			displayUsers(results);
 		}
-		console.log(list, names);
 	}
 
 	//event listeners run search function for every keyup or click on the submit button
 	bar.addEventListener('click', e => {
-		if(e.target.id === 'search-submit') {
-			search();
-		}
+		if(e.target.id === 'search-submit') { search() }
 	});
-	bar.addEventListener('keydown', e => {
-		if(e.key !== 'Backspace') {
-			search();
-		} else if(!body.querySelector('input').value) {
-			displayUsers(list);
-		}
-	});
+	bar.addEventListener('keyup', search);
 }
 
 //toggles to other users' modal windows
@@ -151,7 +141,9 @@ function toggleUser(direction, user) {
 function checkIndex(index) {
 	if(index === 0) { 
 		body.querySelector('#modal-prev').disabled = true;
-	} else if (index === results.length-1) {
+	} 
+
+	if (index === list.length-1) {
 		body.querySelector('#modal-next').disabled = true;
 	}
 }
